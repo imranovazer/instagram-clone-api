@@ -54,7 +54,6 @@ const AuthController = {
     login: async (req, res, next) => {
         try {
             const { email, password } = req.body;
-
             // 1) Check if email and password exist
             if (!email || !password) {
                 return res.status(400).json({
@@ -129,8 +128,8 @@ const AuthController = {
         try {
             // 1) Getting token and check of it's there
 
-        
-            
+
+
             let token;
             if (
                 req.headers.authorization &&

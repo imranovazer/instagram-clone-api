@@ -29,8 +29,17 @@ const UserSchema = new mongoose.Schema(
             ref: 'User'
         }],
         posts: [{
-            type: mongoose.Schema.Types.ObjectId
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Post'
         }],
+        favoritePosts: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Post'
+            }
+
+        ],
+
 
         passwordResetToken: String,
         passwordResetExpires: Date,

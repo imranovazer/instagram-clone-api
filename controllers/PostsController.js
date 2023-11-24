@@ -19,8 +19,6 @@ const PostController = {
     uploadPostPhoto: upload.single("photo"),
     resizePostPhoto: async (req, res, next) => {
         try {
-
-
             if (!req.file) return next();
 
             const imageName = req.user._id || req.params.id
@@ -46,7 +44,6 @@ const PostController = {
 
             const { name, description } = req.body;
 
-
             const newPost = await Post.create(
                 {
                     name,
@@ -57,7 +54,6 @@ const PostController = {
             );
             MyUserInfo.posts.push(newPost._id);
             await MyUserInfo.save();
-
 
             // console.log("User id who created the post", userId);
 
@@ -74,8 +70,73 @@ const PostController = {
             })
 
         }
+    },
+
+    likePost: async (req, res) => {
+        try {
+            const MyUserData = req.user;
+            const postToLikeId = req.params.id;
+            const postToLike = await Post.findById(postToLikeId);
+
+            postToLike.likes.push(MyUserData._id);
+
+            await postToLike.save();
+
+            MyUserData.favoritePosts.push(postToLikeId);
+            await MyUserData.save()
+
+            returnres.status(200).json(
+                {
+                    status: 'sucess',
+                    message: 'Post liked sucessfully'
+                }
+            )
+
+        }
+        catch (err) {
+            res.status(500).json(
+                {
+                    status: 'fail',
+                    error: err
+                }
+            )
+        }
+
+    },
+    unlikePost: async (req, res) => {
+        try {
+            const MyUserData = req.user;
+            const postToLikeId = req.params.id;
+            const postToLike = await Post.findById(postToLikeId);
+
+            postToLike.likes.filter(item => item != MyUserData._id);
+
+            await postToLike.save();
+
+            MyUserData.favoritePosts.filter(item => item != postToLikeId);
+            await MyUserData.save()
+
+            returnres.status(200).json(
+                {
+                    status: 'sucess',
+                    message: 'Post unkliked sucessfully'
+                }
+            )
+
+
+
+        } catch (error) {
+            res.status(500).json(
+                {
+                    status: 'fail',
+                    error: err
+                }
+            )
+
+        }
     }
 
-}
 
+
+}
 module.exports = PostController 
