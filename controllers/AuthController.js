@@ -1,5 +1,10 @@
 const User = require('../models/User');
 const jwt = require("jsonwebtoken");
+const Email = require('../utils/email');
+
+
+
+
 const signToken = (id) => {
     const access = jwt.sign({ id }, process.env.SECRET_KEY, {
         expiresIn: 1000 * 60 * 15,
@@ -11,6 +16,7 @@ const signToken = (id) => {
     })
     return { access, refresh }
 };
+
 const createSendToken = (user, statusCode, req, res) => {
     const { access, refresh } = signToken(user._id);
 
@@ -114,6 +120,51 @@ const AuthController = {
         } catch (error) {
             console.log(error);
             res.status(400).json({
+                status: "fail",
+                error,
+            });
+        }
+    },
+    isAuth: async (req, res) => {
+        try {
+            // 1) Getting token and check of it's there
+
+        
+            
+            let token;
+            if (
+                req.headers.authorization &&
+                req.headers.authorization.startsWith("Bearer")
+            ) {
+                token = req.headers.authorization.split(" ")[1];
+            } else if (req.cookies.access) {
+                token = req.cookies.access;
+            }
+
+
+            if (!token) {
+                return res.status(401).json({
+                    status: "fail",
+                    message: "You are not logged in",
+                });
+            }
+
+
+            const decoded = await jwt.verify(token, process.env.SECRET_KEY);
+
+            const currentUser = await User.findById(decoded.id);
+            if (!currentUser) {
+                return res.status(401).json({
+                    status: "fail",
+                    message: "User doesn't exsists",
+                });
+            }
+            res.status(200).json({
+                status: 'success',
+                data: currentUser
+            })
+        } catch (error) {
+            return res.status(401).json({
                 status: "fail",
                 error,
             });

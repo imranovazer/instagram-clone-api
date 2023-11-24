@@ -20,6 +20,18 @@ const UserSchema = new mongoose.Schema(
             type: String,
             default: "default.jpg"
         },
+        followers: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }],
+        following: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }],
+        posts: [{
+            type: mongoose.Schema.Types.ObjectId
+        }],
+
         passwordResetToken: String,
         passwordResetExpires: Date,
     }

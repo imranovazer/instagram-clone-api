@@ -1,13 +1,21 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const AuthRouter = require('./routes/AuthRouter');
+const UserRouter = require('./routes/UserRoutes');
+const cors = require('cors');
+const path = require("path");
+const PostsRouter = require('./routes/PostsRouter');
+
 const mongoose = require('mongoose');
 dotenv.config();
-
-
 const app = express();
-
+app.use(cors({
+    origin: ['http://localhost:5173', 'https://tour-front-chi.vercel.app'],
+    credentials: true,
+}));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
+
 
 const PORT = process.env.PORT || 8080
 
@@ -19,6 +27,10 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/auth/', AuthRouter);
+
+app.use('/api/user', UserRouter);
+
+app.use('/api/post', PostsRouter)
 
 
 
