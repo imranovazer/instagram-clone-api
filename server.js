@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
     res.send('<h1>Hello from instagram server<h1>');
 })
 
-app.use('/api/auth/', AuthRouter);
+app.use('/api/auth', AuthRouter);
 
 app.use('/api/user', UserRouter);
 

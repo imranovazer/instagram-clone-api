@@ -38,6 +38,8 @@ const PostController = {
     },
     createPost: async (req, res) => {
         try {
+            console.log('Create post');
+
             const MyUserInfo = req.user;
 
             const { _id: userId } = MyUserInfo;
@@ -74,10 +76,22 @@ const PostController = {
 
     likePost: async (req, res) => {
         try {
+            console.log('Like post');
+
             const MyUserData = req.user;
             const postToLikeId = req.params.id;
             const postToLike = await Post.findById(postToLikeId);
 
+            const isAlreadyLiked = MyUserData.favoritePosts.includes(postToLike._id);
+            if (isAlreadyLiked) {
+                return res.status(400).json(
+                    {
+                        status: 'fail',
+                        message: 'Post already liked by you'
+                    }
+
+                )
+            }
             postToLike.likes.push(MyUserData._id);
 
             await postToLike.save();
@@ -85,7 +99,7 @@ const PostController = {
             MyUserData.favoritePosts.push(postToLikeId);
             await MyUserData.save()
 
-            returnres.status(200).json(
+            return res.status(200).json(
                 {
                     status: 'sucess',
                     message: 'Post liked sucessfully'
@@ -94,6 +108,7 @@ const PostController = {
 
         }
         catch (err) {
+            console.log("WHAT AN ERROR  ", err);
             res.status(500).json(
                 {
                     status: 'fail',
@@ -105,24 +120,25 @@ const PostController = {
     },
     unlikePost: async (req, res) => {
         try {
+            console.log('Dislike post');
+
             const MyUserData = req.user;
             const postToLikeId = req.params.id;
             const postToLike = await Post.findById(postToLikeId);
 
-            postToLike.likes.filter(item => item != MyUserData._id);
+            postToLike.likes = postToLike.likes.filter(item => !item.equals(MyUserData._id));
 
             await postToLike.save();
 
-            MyUserData.favoritePosts.filter(item => item != postToLikeId);
+            MyUserData.favoritePosts = MyUserData.favoritePosts.filter(item => !item.equals(postToLikeId));
             await MyUserData.save()
 
-            returnres.status(200).json(
+            return res.status(200).json(
                 {
                     status: 'sucess',
                     message: 'Post unkliked sucessfully'
                 }
             )
-
 
 
         } catch (error) {

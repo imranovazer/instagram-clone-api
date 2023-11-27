@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require("jsonwebtoken");
 const Email = require('../utils/email');
+const bcrypt = require("bcryptjs");
 
 
 
@@ -52,6 +53,8 @@ const createSendToken = (user, statusCode, req, res) => {
 
 const AuthController = {
     login: async (req, res, next) => {
+
+        console.log('Login');
         try {
             const { email, password } = req.body;
             // 1) Check if email and password exist
@@ -81,6 +84,8 @@ const AuthController = {
         }
     },
     logout: async (req, res) => {
+        console.log('Logout');
+
         res.cookie("access", "loggedout", {
             expires: new Date(Date.now() + 10 * 1000),
             httpOnly: true,
@@ -99,6 +104,8 @@ const AuthController = {
     ,
     register: async (req, res) => {
         try {
+            console.log('Register');
+
             const { username, email, password, passwordConfirm } = req.body;
 
             if (password !== passwordConfirm) {
@@ -109,11 +116,11 @@ const AuthController = {
             }
 
 
-
+            const hashedPassword = await bcrypt.hash(password, 12);
             const newUser = await User.create({
                 username: username,
                 email: email,
-                password: password,
+                password: hashedPassword,
             });
             createSendToken(newUser, 201, req, res);
         } catch (error) {
@@ -171,6 +178,8 @@ const AuthController = {
     },
     refreshToken: async (req, res) => {
         try {
+            console.log('Refresh');
+
 
             let token;
             if (

@@ -7,6 +7,7 @@ const router = express.Router();
 
 
 router.use(ProtectMiddleware)
+
 router.post('/follow/:id', UserController.followUser);
 
 router.post('/unfollow/:id', UserController.unfollowUser);

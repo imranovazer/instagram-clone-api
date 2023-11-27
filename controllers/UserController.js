@@ -1,11 +1,14 @@
 const User = require('../models/User')
-
 const UserController = {
     unfollowUser: async (req, res) => {
+
         try {
+            console.log('Unfollow');
 
             const userToUnfollow = await User.findById(req.params.id);
             const MyUserData = req.user;
+            console.log(MyUserData);
+
 
             if (JSON.stringify(MyUserData._id) == JSON.stringify(userToUnfollow._id)) {
 
@@ -16,12 +19,11 @@ const UserController = {
                     }
                 )
             }
-
-            userToUnfollow.followers = userToUnfollow.followers.filter(item => item !== req.params.id);
+            userToUnfollow.followers = userToUnfollow.followers.filter(item => !item.equals(MyUserData._id));
 
             await userToUnfollow.save();
 
-            MyUserData.following = MyUserData.following.filter(item => item !== userToUnfollow._id);
+            MyUserData.following = MyUserData.following.filter(item => !item.equals(userToUnfollow._id));
 
             await MyUserData.save();
 
@@ -33,10 +35,11 @@ const UserController = {
             )
 
         } catch (error) {
+            console.log(error);
             return res.status(500).json(
                 {
 
-                    status: 'fail',
+                    status: 'failkkkkkkkk',
                     error
                 }
             )
@@ -44,13 +47,12 @@ const UserController = {
 
     },
 
-
     followUser: async (req, res) => {
+        console.log('Follow');
 
         try {
             const userToFollow = await User.findById(req.params.id);
             const MyUserData = req.user;
-
 
             if (JSON.stringify(MyUserData._id) == JSON.stringify(userToFollow._id)) {
                 return res.status(400).json(
