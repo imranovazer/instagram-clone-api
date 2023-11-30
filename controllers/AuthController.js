@@ -2,6 +2,8 @@ const User = require('../models/User');
 const jwt = require("jsonwebtoken");
 const Email = require('../utils/email');
 const bcrypt = require("bcryptjs");
+const crypto = require('crypto');
+
 
 
 
@@ -25,14 +27,14 @@ const createSendToken = (user, statusCode, req, res) => {
         expires: new Date(Date.now() + 15 * 60 * 1000),
         httpOnly: true,
         secure: req.secure || req.headers["x-forwarded-proto"] === "https",
-        sameSite: 'None',
+        // sameSite: 'None',
 
     });
     res.cookie("refresh", refresh, {
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         httpOnly: true,
         secure: req.secure || req.headers["x-forwarded-proto"] === "https",
-        sameSite: 'None',
+        // sameSite: 'None',
 
     });
 
@@ -89,13 +91,13 @@ const AuthController = {
         res.cookie("access", "loggedout", {
             expires: new Date(Date.now() + 10 * 1000),
             httpOnly: true,
-            sameSite: 'None',
+            // sameSite: 'None',
 
         });
         res.cookie("refresh", "loggedout", {
             expires: new Date(Date.now() + 10 * 1000),
             httpOnly: true,
-            sameSite: 'None',
+            // sameSite: 'None',
 
         });
         return res.status(200).json({ status: "success" });
@@ -248,7 +250,7 @@ const AuthController = {
                 user.passwordResetToken = undefined;
                 user.passwordResetExpires = undefined;
                 await user.save({ validateBeforeSave: false });
-
+                console.log(err);
                 return res.status(500).json({
                     status: "fail",
                     message: "Error while sending email, try later",
@@ -263,6 +265,7 @@ const AuthController = {
         // 1) Get user based on POSTed email
     },
     checkValidityOfResetPassword: async (req, res) => {
+        console.log("Check validity");
         try {
             const hashedToken = crypto
                 .createHash("sha256")
@@ -273,7 +276,6 @@ const AuthController = {
                 passwordResetToken: hashedToken,
                 passwordResetExpires: { $gt: Date.now() },
             });
-
             if (!user) {
                 return res.status(403).json({
                     status: "fail",
@@ -292,6 +294,7 @@ const AuthController = {
             }
 
         } catch (error) {
+            console.log(error);
             res.status(500).json(
                 {
                     staus: 'fail',
@@ -323,7 +326,9 @@ const AuthController = {
                     message: "Token is invalid or expired",
                 });
             }
-            user.password = req.body.password;
+
+
+            user.password = await bcrypt.hash(req.body.password, 12);
 
             user.passwordResetToken = undefined;
             user.passwordResetExpires = undefined;
@@ -348,6 +353,7 @@ const AuthController = {
         try {
             // 1) Get user from collection
             const user = await User.findById(req.user.id).select("+password");
+
 
             // 2) Check if POSTed current password is correct
             if (

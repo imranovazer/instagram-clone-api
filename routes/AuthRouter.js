@@ -14,6 +14,8 @@ router.post("/forgot-password", AuthController.forgotPassword);
 router.patch("/reset-password/:token", AuthController.resetPassword);
 router.post("/check-reset-token/:token", AuthController.checkValidityOfResetPassword)
 
+
+
 router.use(ProtectMiddleware);
 
 module.exports = router

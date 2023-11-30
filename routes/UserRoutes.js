@@ -8,9 +8,12 @@ const router = express.Router();
 
 router.use(ProtectMiddleware)
 
+router.post('/updateMe', UserController.uploadUserPhoto,
+    UserController.resizeUserPhoto,
+    UserController.updateMe);
 router.post('/follow/:id', UserController.followUser);
 
-router.post('/unfollow/:id', UserController.unfollowUser);
+router.delete('/unfollow/:id', UserController.unfollowUser);
 
 
 

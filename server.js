@@ -4,6 +4,7 @@ const AuthRouter = require('./routes/AuthRouter');
 const UserRouter = require('./routes/UserRoutes');
 const cors = require('cors');
 const path = require("path");
+const cookieParser = require('cookie-parser');
 const PostsRouter = require('./routes/PostsRouter');
 
 const mongoose = require('mongoose');
@@ -16,6 +17,7 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
+app.use(cookieParser());
 
 const PORT = process.env.PORT || 8080
 
