@@ -11,8 +11,12 @@ const router = express.Router();
 
 router.use(ProtectMiddleware);
 
+
+
 router.route('/').post(PostController.uploadPostPhoto, PostController.resizePostPhoto, PostController.createPost);
 
+router.route('/not-my-posts').get(PostController.getAllNotMyPosts);
+router.route('/following').get(PostController.getFollowingUserPosts);
 router.post('/like/:id', PostController.likePost);
 router.delete('/unlike/:id', PostController.unlikePost);
 router.post('/comment/:postId', CommentController.createComment);

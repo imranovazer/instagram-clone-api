@@ -26,9 +26,19 @@ const PostSchema = new mongoose.Schema(
         comments: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Comment'
-        }]
+        }],
+        createdAt: {
+            type: Date,
+            default: Date.now()
+        },
+        
 
     }
 )
+
+PostSchema.pre('find', function (next) {
+    this.populate('likes comments author')
+    next();
+})
 
 module.exports = mongoose.model("Post", PostSchema); 

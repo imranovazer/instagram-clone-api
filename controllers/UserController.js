@@ -19,6 +19,8 @@ const multerFilter = (req, file, cb) => {
     }
 };
 
+
+
 const multerStorage = multer.memoryStorage();
 
 const upload = multer({
@@ -38,7 +40,7 @@ const UserController = {
             }
 
             // 2) Filtered out unwanted fields names that are not allowed to be updated
-            const filteredBody = filterObj(req.body, "name", "email");
+            const filteredBody = filterObj(req.body, "username", "email");
             if (req.file) filteredBody.photo = req.file.filename;
 
             // 3) Update user document
@@ -51,6 +53,7 @@ const UserController = {
                 }
             );
 
+            await updatedUser.populate('posts followers following favoritePosts')
             res.status(200).json({
                 status: "success",
                 data: {
@@ -168,6 +171,57 @@ const UserController = {
             )
         }
 
+    },
+    getUser: async (req, res) => {
+        try {
+            const user = await User.findById(req.params.id);
+            if (!user) {
+                return res.status(404).json(
+                    {
+                        status: 'fail',
+                        message: 'User not found'
+                    }
+                )
+            }
+            await user.populate('posts followers following favoritePosts')
+            return res.status(200).json(
+                {
+                    status: 'sucess',
+                    data: user
+                }
+            )
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json(
+                {
+                    status: 'fail',
+                    error
+                }
+            )
+        }
+
+    }
+    ,
+    getUnfollowingUsers: async (req, res) => {
+        try {
+            const MyUserData = req.user;
+            const users = await User.find({ _id: { $nin: MyUserData.following, $ne: MyUserData._id } });
+            return res.status(200).json(
+                {
+                    status: 'sucess',
+                    data: users
+                }
+            )
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json(
+                {
+                    status: 'fail',
+                    error
+                }
+            )
+        }
     }
 
 }

@@ -26,7 +26,7 @@ const PostController = {
             req.file.filename = `post-${imageName}-${Date.now()}.jpeg`;
 
             await sharp(req.file.buffer)
-                .resize(500, 500)
+                .resize(2000, 1333)
                 .toFormat("jpeg")
                 .jpeg({ quality: 90 })
                 .toFile(`public/img/posts/${req.file.filename}`);
@@ -51,9 +51,11 @@ const PostController = {
                     name,
                     description,
                     author: userId,
-                    photo: req.file.filename
+                    photo: req.file.filename,
+
                 }
             );
+            await newPost.populate('likes comments author')
             MyUserInfo.posts.push(newPost._id);
             await MyUserInfo.save();
 
@@ -63,14 +65,13 @@ const PostController = {
                 status: 'sucess',
                 data: newPost
             })
-
         }
         catch (error) {
+            console.log(error);
             return res.status(500).json({
                 status: 'fail',
                 error
             })
-
         }
     },
 
@@ -87,7 +88,8 @@ const PostController = {
                 return res.status(400).json(
                     {
                         status: 'fail',
-                        message: 'Post already liked by you'
+                        message: 'Post already liked by you',
+
                     }
 
                 )
@@ -98,11 +100,13 @@ const PostController = {
 
             MyUserData.favoritePosts.push(postToLikeId);
             await MyUserData.save()
+            await postToLike.populate("author likes comments");
 
             return res.status(200).json(
                 {
                     status: 'sucess',
-                    message: 'Post liked sucessfully'
+                    message: 'Post liked sucessfully',
+                    post: postToLike
                 }
             )
 
@@ -145,12 +149,55 @@ const PostController = {
             res.status(500).json(
                 {
                     status: 'fail',
-                    error: err
+                    error: error
                 }
             )
 
         }
-    }
+    },
+    getFollowingUserPosts: async (req, res) => {
+        try {
+            const MyUserData = req.user;
+            const following = MyUserData.following;
+            const followingPosts = await Post.find({ author: { $in: following } }).sort('-createdAt').populate('author likes comments');
+            return res.status(200).json(
+                {
+                    status: 'sucess',
+                    data: followingPosts
+                }
+            )
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json(
+                {
+                    status: 'fail',
+                    error
+                }
+            )
+        }
+    },
+    getAllNotMyPosts: async (req, res) => {
+        try {
+            const MyUserData = req.user;
+
+            const allPosts = await Post.find({ author: { $ne: MyUserData._id } }).sort('-createdAt').populate('author likes comments');
+            return res.status(200).json(
+                {
+                    status: 'sucess',
+                    data: allPosts
+                }
+            )
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json(
+                {
+                    status: 'fail',
+                    error
+                }
+            )
+        }
+    },
+
 
 
 

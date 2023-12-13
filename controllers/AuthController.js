@@ -67,7 +67,7 @@ const AuthController = {
                 });
             }
             // 2) Check if user exists && password is correct
-            const user = await User.findOne({ email }).select("+password");
+            const user = await User.findOne({ email }).select("+password").populate('posts followers following favoritePosts');
 
             if (!user || !(await user.correctPassword(password, user.password))) {
                 return res.status(400).json({
@@ -79,7 +79,8 @@ const AuthController = {
             // 3) If everything ok, send token to client
             createSendToken(user, 200, req, res);
         } catch (error) {
-            return res.status(400).json({
+            console.log(error);
+            return res.status(500).json({
                 status: "fail",
                 error,
             });
@@ -160,7 +161,7 @@ const AuthController = {
 
             const decoded = await jwt.verify(token, process.env.SECRET_KEY);
 
-            const currentUser = await User.findById(decoded.id);
+            const currentUser = await User.findById(decoded.id).populate('posts followers following favoritePosts');
             if (!currentUser) {
                 return res.status(401).json({
                     status: "fail",
