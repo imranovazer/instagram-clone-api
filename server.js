@@ -1,48 +1,53 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const AuthRouter = require('./routes/AuthRouter');
-const UserRouter = require('./routes/UserRoutes');
-const cors = require('cors');
+const express = require("express");
+const dotenv = require("dotenv");
+const http = require("http");
+const socketio = require("socket.io");
+const AuthRouter = require("./routes/AuthRouter");
+const UserRouter = require("./routes/UserRoutes");
+const cors = require("cors");
 const path = require("path");
-const cookieParser = require('cookie-parser');
-const PostsRouter = require('./routes/PostsRouter');
+const cookieParser = require("cookie-parser");
+const PostsRouter = require("./routes/PostsRouter");
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 dotenv.config();
 const app = express();
-app.use(cors({
-    origin: ['http://localhost:5173', 'https://tour-front-chi.vercel.app'],
+
+const server = http.createServer(app);
+
+const io = socketio(server);
+
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://tour-front-chi.vercel.app"],
+
     credentials: true,
-}));
+  })
+);
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
 app.use(cookieParser());
 
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 8080;
 
-
-
-
-app.get('/', (req, res) => {
-    res.send('<h1>Hello from instagram server<h1>');
-})
-
-app.use('/api/auth', AuthRouter);
-
-app.use('/api/user', UserRouter);
-
-app.use('/api/post', PostsRouter)
-
-
-
-mongoose.connect(process.env.MONGO_DB).then(() => {
-    console.log("Connected to Database");
+app.get("/", (req, res) => {
+  res.send("<h1>Hello from instagram server<h1>");
 });
 
+app.use("/api/auth", AuthRouter);
 
-app.listen(process.env.PORT, () => {
+app.use("/api/user", UserRouter);
 
-    console.log("Server started on port ", PORT);
+app.use("/api/post", PostsRouter);
 
-}); 
+mongoose.connect(process.env.MONGO_DB).then(() => {
+  console.log("Connected to Database");
+});
+
+io.on("connection", (client) => {
+  console.log("CONNECTED USER DATA", client.id);
+});
+server.listen(process.env.PORT, () => {
+  console.log("Server started on port ", PORT);
+});

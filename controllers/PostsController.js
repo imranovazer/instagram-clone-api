@@ -1,205 +1,182 @@
-const Post = require('../models/Post');
-const multer = require('multer');
-const sharp = require('sharp');
+const Post = require("../models/Post");
+const multer = require("multer");
+const sharp = require("sharp");
 const multerStorage = multer.memoryStorage();
 const multerFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith("image")) {
-        cb(null, true);
-    } else {
-        cb(new Error("Not an image! Please upload only images."), false);
-    }
+  if (file.mimetype.startsWith("image")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Not an image! Please upload only images."), false);
+  }
 };
 const upload = multer({
-    storage: multerStorage,
-    fileFilter: multerFilter,
+  storage: multerStorage,
+  fileFilter: multerFilter,
 });
 
-
 const PostController = {
-    uploadPostPhoto: upload.single("photo"),
-    resizePostPhoto: async (req, res, next) => {
-        try {
-            if (!req.file) return next();
+  uploadPostPhoto: upload.single("photo"),
+  resizePostPhoto: async (req, res, next) => {
+    try {
+      if (!req.file) return next();
 
-            const imageName = req.user._id || req.params.id
+      const imageName = req.user._id || req.params.id;
 
-            req.file.filename = `post-${imageName}-${Date.now()}.jpeg`;
+      req.file.filename = `post-${imageName}-${Date.now()}.jpeg`;
 
-            await sharp(req.file.buffer)
-                .resize(2000, 1333)
-                .toFormat("jpeg")
-                .jpeg({ quality: 90 })
-                .toFile(`public/img/posts/${req.file.filename}`);
+      await sharp(req.file.buffer)
+        .resize(2000, 1333)
+        .toFormat("jpeg")
+        .jpeg({ quality: 90 })
+        .toFile(`public/img/posts/${req.file.filename}`);
 
-            next();
-        } catch (error) {
-            console.log(error);
-        }
-    },
-    createPost: async (req, res) => {
-        try {
-            console.log('Create post');
+      next();
+    } catch (error) {
+      console.log(error);
+    }
+  },
+  createPost: async (req, res) => {
+    try {
+      console.log("Create post");
 
-            const MyUserInfo = req.user;
+      const MyUserInfo = req.user;
 
-            const { _id: userId } = MyUserInfo;
+      const { _id: userId } = MyUserInfo;
 
-            const { name, description } = req.body;
+      const { name, description } = req.body;
 
-            const newPost = await Post.create(
-                {
-                    name,
-                    description,
-                    author: userId,
-                    photo: req.file.filename,
+      const newPost = await Post.create({
+        name,
+        description,
+        author: userId,
+        photo: req.file.filename,
+      });
+      await newPost.populate("likes comments author");
+      MyUserInfo.posts.push(newPost._id);
+      await MyUserInfo.save();
 
-                }
-            );
-            await newPost.populate('likes comments author')
-            MyUserInfo.posts.push(newPost._id);
-            await MyUserInfo.save();
+      // console.log("User id who created the post", userId);
 
-            // console.log("User id who created the post", userId);
+      return res.status(201).json({
+        status: "sucess",
+        data: newPost,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "fail",
+        error,
+      });
+    }
+  },
 
-            return res.status(201).json({
-                status: 'sucess',
-                data: newPost
-            })
-        }
-        catch (error) {
-            console.log(error);
-            return res.status(500).json({
-                status: 'fail',
-                error
-            })
-        }
-    },
+  likePost: async (req, res) => {
+    try {
+      console.log("Like post");
 
-    likePost: async (req, res) => {
-        try {
-            console.log('Like post');
+      const MyUserData = req.user;
+      const postToLikeId = req.params.id;
+      const postToLike = await Post.findById(postToLikeId);
 
-            const MyUserData = req.user;
-            const postToLikeId = req.params.id;
-            const postToLike = await Post.findById(postToLikeId);
+      const isAlreadyLiked = MyUserData.favoritePosts.includes(postToLike._id);
 
-            const isAlreadyLiked = MyUserData.favoritePosts.includes(postToLike._id);
-            if (isAlreadyLiked) {
-                return res.status(400).json(
-                    {
-                        status: 'fail',
-                        message: 'Post already liked by you',
-
-                    }
-
-                )
-            }
-            postToLike.likes.push(MyUserData._id);
-
-            await postToLike.save();
-
-            MyUserData.favoritePosts.push(postToLikeId);
-            await MyUserData.save()
-            await postToLike.populate("author likes comments");
-
-            return res.status(200).json(
-                {
-                    status: 'sucess',
-                    message: 'Post liked sucessfully',
-                    post: postToLike
-                }
-            )
-
-        }
-        catch (err) {
-            console.log("WHAT AN ERROR  ", err);
-            res.status(500).json(
-                {
-                    status: 'fail',
-                    error: err
-                }
-            )
-        }
-
-    },
-    unlikePost: async (req, res) => {
-        try {
-            console.log('Dislike post');
-
-            const MyUserData = req.user;
-            const postToLikeId = req.params.id;
-            const postToLike = await Post.findById(postToLikeId);
-
-            postToLike.likes = postToLike.likes.filter(item => !item.equals(MyUserData._id));
-
-            await postToLike.save();
-
-            MyUserData.favoritePosts = MyUserData.favoritePosts.filter(item => !item.equals(postToLikeId));
-            await MyUserData.save()
-
-            return res.status(200).json(
-                {
-                    status: 'sucess',
-                    message: 'Post unkliked sucessfully'
-                }
-            )
+      if (isAlreadyLiked) {
 
 
-        } catch (error) {
-            res.status(500).json(
-                {
-                    status: 'fail',
-                    error: error
-                }
-            )
+        
+        return res.status(400).json({
+          status: "fail",
+          message: "Post already liked by you",
+        });
+      }
+      postToLike.likes.push(MyUserData._id);
 
-        }
-    },
-    getFollowingUserPosts: async (req, res) => {
-        try {
-            const MyUserData = req.user;
-            const following = MyUserData.following;
-            const followingPosts = await Post.find({ author: { $in: following } }).sort('-createdAt').populate('author likes comments');
-            return res.status(200).json(
-                {
-                    status: 'sucess',
-                    data: followingPosts
-                }
-            )
-        } catch (error) {
-            console.log(error);
-            return res.status(500).json(
-                {
-                    status: 'fail',
-                    error
-                }
-            )
-        }
-    },
-    getAllNotMyPosts: async (req, res) => {
-        try {
-            const MyUserData = req.user;
+      await postToLike.save();
 
-            const allPosts = await Post.find({ author: { $ne: MyUserData._id } }).sort('-createdAt').populate('author likes comments');
-            return res.status(200).json(
-                {
-                    status: 'sucess',
-                    data: allPosts
-                }
-            )
-        } catch (error) {
-            console.log(error);
-            return res.status(500).json(
-                {
-                    status: 'fail',
-                    error
-                }
-            )
-        }
-    },
+      MyUserData.favoritePosts.push(postToLikeId);
+      await MyUserData.save();
+      await postToLike.populate("author likes comments");
 
+      return res.status(200).json({
+        status: "sucess",
+        message: "Post liked sucessfully",
+        post: postToLike,
+      });
+    } catch (err) {
+      console.log("WHAT AN ERROR  ", err);
+      res.status(500).json({
+        status: "fail",
+        error: err,
+      });
+    }
+  },
+  unlikePost: async (req, res) => {
+    try {
+      console.log("Dislike post");
 
+      const MyUserData = req.user;
+      const postToLikeId = req.params.id;
+      const postToLike = await Post.findById(postToLikeId);
 
+      postToLike.likes = postToLike.likes.filter(
+        (item) => !item.equals(MyUserData._id)
+      );
 
-}
-module.exports = PostController 
+      await postToLike.save();
+
+      MyUserData.favoritePosts = MyUserData.favoritePosts.filter(
+        (item) => !item.equals(postToLikeId)
+      );
+      await MyUserData.save();
+
+      return res.status(200).json({
+        status: "sucess",
+        message: "Post unkliked sucessfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "fail",
+        error: error,
+      });
+    }
+  },
+  getFollowingUserPosts: async (req, res) => {
+    try {
+      const MyUserData = req.user;
+      const following = MyUserData.following;
+      const followingPosts = await Post.find({ author: { $in: following } })
+        .sort("-createdAt")
+        .populate("author likes comments");
+      return res.status(200).json({
+        status: "sucess",
+        data: followingPosts,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "fail",
+        error,
+      });
+    }
+  },
+  getAllNotMyPosts: async (req, res) => {
+    try {
+      const MyUserData = req.user;
+
+      const allPosts = await Post.find({ author: { $ne: MyUserData._id } })
+        .sort("-createdAt")
+        .populate("author likes comments");
+      return res.status(200).json({
+        status: "sucess",
+        data: allPosts,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "fail",
+        error,
+      });
+    }
+  },
+};
+module.exports = PostController;
