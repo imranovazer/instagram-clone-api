@@ -5,10 +5,7 @@ const messageSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
-  to: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
+  sessionId: { type: mongoose.Schema.Types.ObjectId, ref: "ChatSession" },
   text: {
     type: string,
     required: [true, "Message can not empty string"],
@@ -16,3 +13,4 @@ const messageSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("Message", messageSchema);
+  
